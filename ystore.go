@@ -19,6 +19,16 @@ var (
 	mutex          = &sync.RWMutex{}
 )
 
+//
+// DB : key value store(DB)の情報
+// 	params
+// - name 				: データベース名？
+// - fk 					: ？
+// - fv						: ?
+// - keys					: データに紐づくキー
+// - vals					: 実際に扱うデータを入れる箱？
+// - cancelSyncer : ?
+// - storemode		: ?
 type Db struct {
 	sync.RWMutex
 	name         string
@@ -30,6 +40,12 @@ type Db struct {
 	storemode    int
 }
 
+// Cmd : コマンドの情報??
+// 	params
+// - Seek 				: ??
+// - Size					: ??
+// - KeySeek			: ??
+// - Val					: ??
 type Cmd struct {
 	Seek    uint32
 	Size    uint32
@@ -37,11 +53,17 @@ type Cmd struct {
 	Val     []byte
 }
 
+// Config : 設定の情報？
+// 	params
+// - FileMode 				: ??
+// - DirMode 					: ??
+// - SyncInterval 		: ??
+// - StoreMode				: ??
 type Config struct {
 	FileMode     int
 	DirMode      int
 	SyncInterval int
-	Storemode    int
+	StoreMode    int
 }
 
 func init() {
@@ -50,15 +72,14 @@ func init() {
 
 func newDb(f string, cfg *Config) (*Db, error) {
 	var err error
-	db := new(Db)
 
+	db := new(Db)
 	db.Lock()
 	defer db.Unlock()
-
 	db.name = f
 	db.keys = make([][]byte, 0)
 	db.vals = make(map[string]*Cmd)
-	db.storemode = cfg.Storemode
+	db.storemode = cfg.StoreMode
 
 	if cfg.FileMode == 0 {
 		cfg.FileMode = DefaultConfig.FileMode
@@ -70,7 +91,6 @@ func newDb(f string, cfg *Config) (*Db, error) {
 		return db, nil
 	}
 
-	//ファイル存在チェック
 	_, err = os.Stat(f)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -84,7 +104,6 @@ func newDb(f string, cfg *Config) (*Db, error) {
 			return nil, err
 		}
 	}
-
 	db.fv, err = os.OpenFile(f, os.O_CREATE|os.O_RDWR, os.FileMode(cfg.FileMode))
 	if err != nil {
 		return nil, err
@@ -93,10 +112,22 @@ func newDb(f string, cfg *Config) (*Db, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	buf := new(bytes.Buffer)
 	b, err := ioutil.ReadAll(db.fk)
 	if err != nil {
 		return nil, err
 	}
+	buf.Write(b)
+	var readSeek uint32
+	for buf.Len() > 0 {
+
+	}
+	if cfg.SyncInterval > 0 {
+		db.backgroundManager(cfg.SyncInterval)
+	}
+	return db, err
+}
+
+func (db *Db) backgroundManager(interval int) {
+
 }
